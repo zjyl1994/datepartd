@@ -30,30 +30,35 @@ func main() {
 		},
 	}.Build()
 	defer logger.Sync()
-	logger.Info("DATEPARTD_START")
 	err := loadConfig("config.toml")
 	if err != nil {
 		logger.Error("LOAD_CONFIG", zap.Error(err))
 		return
 	}
-	createPartitionJob()
-	deletePartitionJob()
-	c := cron.New()
-	_, err = c.AddFunc("0 23 * * *", createPartitionJob)
-	if err != nil {
-		logger.Error("CREATE_JOB", zap.Error(err))
-		return
+	if conf.DryRun {
+		logger.Info("DATEPARTD_DRYRUN_START")
+		createPartitionJob()
+		deletePartitionJob()
+		logger.Info("DATEPARTD_DRYRUN_FINISH")
+	} else {
+		logger.Info("DATEPARTD_DAEMON_START")
+		c := cron.New()
+		_, err = c.AddFunc("0 23 * * *", createPartitionJob)
+		if err != nil {
+			logger.Error("CREATE_JOB", zap.Error(err))
+			return
+		}
+		_, err = c.AddFunc("0 1 * * *", deletePartitionJob)
+		if err != nil {
+			logger.Error("CREATE_JOB", zap.Error(err))
+			return
+		}
+		c.Start()
+		chSignal := make(chan os.Signal, 1)
+		signal.Notify(chSignal, os.Interrupt)
+		<-chSignal
+		logger.Info("DATEPARTD_DAEMON_STOP")
 	}
-	_, err = c.AddFunc("0 1 * * *", deletePartitionJob)
-	if err != nil {
-		logger.Error("CREATE_JOB", zap.Error(err))
-		return
-	}
-	c.Start()
-	chSignal := make(chan os.Signal, 1)
-	signal.Notify(chSignal, os.Interrupt)
-	<-chSignal
-	logger.Info("DATEPARTD_STOP")
 }
 
 func createPartitionJob() {
