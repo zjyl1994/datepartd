@@ -34,11 +34,6 @@ func connectDB(server string, port int, username, password, database string) (*s
 	return sql.Open("mysql", dsn)
 }
 
-// func nowTime() time.Time {
-// 	return time.Now()
-// }
-
 func nowTime() time.Time {
-	t, _ := time.Parse("2006-01-02 15:04:05", "2020-10-30 01:00:00")
-	return t
+	return time.Now()
 }

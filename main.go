@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/robfig/cron/v3"
 	"github.com/zjyl1994/datepartd/mode"
@@ -16,6 +18,7 @@ var deleteModes = map[string]func(mode.Database) error{
 }
 
 func main() {
+	log.Println("DATEPARTD_START")
 	err := loadConfig("config.toml")
 	if err != nil {
 		log.Println(err.Error())
@@ -33,7 +36,10 @@ func main() {
 		return
 	}
 	c.Start()
-
+	chSignal := make(chan os.Signal, 1)
+	signal.Notify(chSignal, os.Interrupt)
+	<-chSignal
+	log.Println("DATEPARTD_STOP")
 }
 
 func createPartitionJob() {

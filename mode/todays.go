@@ -2,6 +2,7 @@ package mode
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -13,6 +14,7 @@ func ToDaysCreate(mode Database) error {
 		parts[i] = fmt.Sprintf("PARTITION %s VALUES LESS THAN (TO_DAYS('%s'))", partNameGen(date), date.Format("2006-01-02"))
 	}
 	sqlStr := fmt.Sprintf("ALTER TABLE %s PARTITION BY RANGE (TO_DAYS(%s))(%s);", mode.Table, mode.Partkey, strings.Join(parts, ","))
+	log.Println("CREATE_PARTITION_SQL", sqlStr)
 	db, err := connectDB(mode.Server, mode.Port, mode.Username, mode.Password, mode.Database)
 	if err != nil {
 		return err
@@ -35,7 +37,7 @@ func ToDaysDelete(mode Database) error {
 	expression := "to_days(`" + strings.ToLower(mode.Partkey) + "`)"
 	purgeDay := nowTime().AddDate(0, 0, -mode.PurgeDays).Format("2006-01-02")
 	sqlString := fmt.Sprintf(sqlTemplate, mode.Database, mode.Table, expression, purgeDay)
-
+	log.Println("QUERY_PARTITION_SQL", sqlString)
 	rows, err := db.Query(sqlString)
 	if err != nil {
 		return err
@@ -54,11 +56,15 @@ func ToDaysDelete(mode Database) error {
 		return err
 	}
 	if len(partNames) > 0 {
+		log.Println("PARTITION_WILL_DELETE", strings.Join(partNames, ","))
 		sqlString = fmt.Sprintf(`ALTER TABLE %s DROP PARTITION %s;`, mode.Table, strings.Join(partNames, ","))
+		log.Println("DELETE_PARTITION_SQL", sqlString)
 		_, err = db.Exec(sqlString)
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Println("NO_PARTITION_WILL_DELETE")
 	}
 	return db.Close()
 }
