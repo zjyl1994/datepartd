@@ -5,28 +5,25 @@ import (
 	"fmt"
 	"time"
 
-	"log"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
+	"go.uber.org/zap"
 )
 
 type Database struct {
-	Name      string
-	Server    string
-	Port      int
-	Username  string
-	Password  string
-	Database  string
-	Mode      string
-	Table     string
-	Partkey   string
-	PurgeDays int
+	Name       string
+	Server     string
+	Port       int
+	Username   string
+	Password   string
+	Database   string
+	Mode       string
+	Table      string
+	Partkey    string
+	PurgeDays  int
+	CreateDays int
 }
-
-const (
-	ForwardCreateDays = 7
-)
 
 func partNameGen(date time.Time) string {
 	return "p" + date.Format("20060102")
@@ -42,14 +39,14 @@ func nowTime() time.Time {
 }
 
 func createFn(mode Database) error {
-	parts := make([]string, ForwardCreateDays)
+	parts := make([]string, mode.CreateDays)
 	date := nowTime()
-	for i := 0; i < ForwardCreateDays; i++ {
+	for i := 0; i < mode.CreateDays; i++ {
 		date = date.AddDate(0, 0, 1)
 		parts[i] = fmt.Sprintf("PARTITION %s VALUES LESS THAN (%s('%s'))", partNameGen(date), strings.ToUpper(mode.Mode), date.Format("2006-01-02"))
 	}
 	sqlStr := fmt.Sprintf("ALTER TABLE %s PARTITION BY RANGE (%s(%s))(%s);", mode.Table, strings.ToUpper(mode.Mode), mode.Partkey, strings.Join(parts, ","))
-	log.Println("CREATE_PARTITION_SQL", sqlStr)
+	logger.Info("CREATE_PARTITION_SQL", zap.String("SQL", sqlStr))
 	db, err := connectDB(mode.Server, mode.Port, mode.Username, mode.Password, mode.Database)
 	if err != nil {
 		return err
@@ -72,7 +69,7 @@ func deleteFn(mode Database) error {
 	expression := strings.ToLower(mode.Mode) + "(`" + strings.ToLower(mode.Partkey) + "`)"
 	purgeDay := nowTime().AddDate(0, 0, -mode.PurgeDays).Format("2006-01-02")
 	sqlString := fmt.Sprintf(sqlTemplate, mode.Database, mode.Table, expression, strings.ToUpper(mode.Mode), purgeDay)
-	log.Println("QUERY_PARTITION_SQL", sqlString)
+	logger.Info("QUERY_PARTITION_SQL", zap.String("SQL", sqlString))
 	rows, err := db.Query(sqlString)
 	if err != nil {
 		return err
@@ -91,15 +88,15 @@ func deleteFn(mode Database) error {
 		return err
 	}
 	if len(partNames) > 0 {
-		log.Println("PARTITION_WILL_DELETE", strings.Join(partNames, ","))
+		logger.Info("PARTITION_WILL_DELETE", zap.String("PartitionNames", strings.Join(partNames, ",")))
 		sqlString = fmt.Sprintf(`ALTER TABLE %s DROP PARTITION %s;`, mode.Table, strings.Join(partNames, ","))
-		log.Println("DELETE_PARTITION_SQL", sqlString)
+		logger.Info("DELETE_PARTITION_SQL", zap.String("SQL", sqlString))
 		_, err = db.Exec(sqlString)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Println("NO_PARTITION_WILL_DELETE")
+		logger.Info("NO_PARTITION_WILL_DELETE")
 	}
 	return db.Close()
 }

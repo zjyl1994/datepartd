@@ -8,4 +8,5 @@ database="test"
 mode="to_days"
 partkey="hiredate"
 table="range_datetime"
+createdays=7
 purgedays=7
