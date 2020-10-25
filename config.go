@@ -4,21 +4,13 @@ import (
 	"io/ioutil"
 
 	"github.com/pelletier/go-toml"
+	"github.com/zjyl1994/datepartd/mode"
 )
 
 var conf Config
 
 type Config struct {
-	Database []Database
-}
-
-type Database struct {
-	Name      string
-	DSN       string
-	Mode      string
-	Table     string
-	Partkey   string
-	PurgeDays int
+	Database []mode.Database
 }
 
 func loadConfig(path string) error {

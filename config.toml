@@ -1,6 +1,10 @@
 [[database]]
 name="TestDB"
-dsn="root:password@tcp(127.0.0.1:3306)/test"
+username="root"
+password="password"
+server="127.0.0.1"
+port=3306
+database="test"
 mode="todays"
 partkey="hiredate"
 table="range_datetime"
