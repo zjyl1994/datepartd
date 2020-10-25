@@ -47,15 +47,19 @@ func createFn(mode Database) error {
 	}
 	sqlStr := fmt.Sprintf("ALTER TABLE %s PARTITION BY RANGE (%s(%s))(%s);", mode.Table, strings.ToUpper(mode.Mode), mode.Partkey, strings.Join(parts, ","))
 	logger.Info("CREATE_PARTITION_SQL", zap.String("SQL", sqlStr))
-	db, err := connectDB(mode.Server, mode.Port, mode.Username, mode.Password, mode.Database)
-	if err != nil {
-		return err
+	if !conf.DryRun {
+		db, err := connectDB(mode.Server, mode.Port, mode.Username, mode.Password, mode.Database)
+		if err != nil {
+			return err
+		}
+		_, err = db.Exec(sqlStr)
+		if err != nil {
+			return err
+		}
+		return db.Close()
+	} else {
+		return nil
 	}
-	_, err = db.Exec(sqlStr)
-	if err != nil {
-		return err
-	}
-	return db.Close()
 }
 
 func deleteFn(mode Database) error {
@@ -91,9 +95,11 @@ func deleteFn(mode Database) error {
 		logger.Info("PARTITION_WILL_DELETE", zap.String("PartitionNames", strings.Join(partNames, ",")))
 		sqlString = fmt.Sprintf(`ALTER TABLE %s DROP PARTITION %s;`, mode.Table, strings.Join(partNames, ","))
 		logger.Info("DELETE_PARTITION_SQL", zap.String("SQL", sqlString))
-		_, err = db.Exec(sqlString)
-		if err != nil {
-			return err
+		if !conf.DryRun {
+			_, err = db.Exec(sqlString)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		logger.Info("NO_PARTITION_WILL_DELETE")

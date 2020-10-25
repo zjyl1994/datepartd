@@ -1,3 +1,4 @@
+dryrun=true
 [[database]]
 name="TestDB"
 username="root"

@@ -9,6 +9,7 @@ import (
 var conf Config
 
 type Config struct {
+	DryRun   bool
 	Database []Database
 }
 
