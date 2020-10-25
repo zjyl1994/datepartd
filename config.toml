@@ -1,0 +1,7 @@
+[[database]]
+name="TestDB"
+dsn="root:password@tcp(127.0.0.1:3306)/test"
+mode="todays"
+partkey="hiredate"
+table="range_datetime"
+purgedays=7
