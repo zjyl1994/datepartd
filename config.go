@@ -9,10 +9,12 @@ import (
 var conf Config
 
 type Config struct {
-	Cron     bool
-	DryRun   bool
-	Timezone string
-	Database []Database
+	Cron       bool
+	DryRun     bool
+	Timezone   string
+	CreateCron string
+	DeleteCron string
+	Database   []Database
 }
 
 func loadConfig(path string) error {

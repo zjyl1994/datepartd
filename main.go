@@ -53,12 +53,25 @@ func main() {
 			tz = time.Local
 		}
 		c := cron.New(cron.WithLocation(tz))
-		_, err = c.AddFunc("0 23 * * *", createPartitionJob)
+		var createCron, deleteCron string
+		if len(conf.CreateCron) > 0 {
+			createCron = conf.CreateCron
+		} else {
+			createCron = "0 23 * * *"
+		}
+		if len(conf.DeleteCron) > 0 {
+			deleteCron = conf.DeleteCron
+		} else {
+			deleteCron = "0 1 * * *"
+		}
+		logger.Info("CREATE_PARTITION_JOB", zap.String("Cron", createCron))
+		logger.Info("DELETE_PARTITION_JOB", zap.String("Cron", deleteCron))
+		_, err = c.AddFunc(createCron, createPartitionJob)
 		if err != nil {
 			logger.Error("CREATE_JOB", zap.Error(err))
 			return
 		}
-		_, err = c.AddFunc("0 1 * * *", deletePartitionJob)
+		_, err = c.AddFunc(deleteCron, deletePartitionJob)
 		if err != nil {
 			logger.Error("CREATE_JOB", zap.Error(err))
 			return

@@ -1,6 +1,8 @@
 dryrun=false
-cron=false
+cron=true
 timezone="Asia/Shanghai"
+createcron="45 22 * * *"
+deletecron="0 2 * * *"
 [[database]]
 name="TestDB"
 username="root"
