@@ -39,9 +39,15 @@ func nowTime() time.Time {
 }
 
 func createFn(mode Database) error {
-	parts := make([]string, mode.CreateDays)
+	var createDays int
+	if mode.CreateDays < 1 {
+		createDays = 1
+	} else {
+		createDays = mode.CreateDays
+	}
+	parts := make([]string, createDays)
 	date := nowTime()
-	for i := 0; i < mode.CreateDays; i++ {
+	for i := 0; i < createDays; i++ {
 		date = date.AddDate(0, 0, 1)
 		parts[i] = fmt.Sprintf("PARTITION %s VALUES LESS THAN (%s('%s'))", partNameGen(date), strings.ToUpper(mode.Mode), date.Format("2006-01-02"))
 	}

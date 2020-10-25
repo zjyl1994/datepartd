@@ -9,7 +9,9 @@ import (
 var conf Config
 
 type Config struct {
+	Cron     bool
 	DryRun   bool
+	Timezone string
 	Database []Database
 }
 

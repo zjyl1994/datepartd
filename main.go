@@ -32,17 +32,27 @@ func main() {
 	defer logger.Sync()
 	err := loadConfig("config.toml")
 	if err != nil {
-		logger.Error("LOAD_CONFIG", zap.Error(err))
+		logger.Error("LOAD_CONFIG_ERROR", zap.Error(err))
 		return
 	}
-	if conf.DryRun {
-		logger.Info("DATEPARTD_DRYRUN_START")
+	if !conf.Cron {
+		logger.Info("DATEPARTD_RUN_IMMEDIATELY")
 		createPartitionJob()
 		deletePartitionJob()
-		logger.Info("DATEPARTD_DRYRUN_FINISH")
+		logger.Info("DATEPARTD_DONE")
 	} else {
 		logger.Info("DATEPARTD_DAEMON_START")
-		c := cron.New()
+		var tz *time.Location
+		if len(conf.Timezone) > 0 {
+			tz, err = time.LoadLocation(conf.Timezone)
+			if err != nil {
+				logger.Error("LOAD_TIMEZONE_FAILED", zap.Error(err))
+				tz = time.Local
+			}
+		} else {
+			tz = time.Local
+		}
+		c := cron.New(cron.WithLocation(tz))
 		_, err = c.AddFunc("0 23 * * *", createPartitionJob)
 		if err != nil {
 			logger.Error("CREATE_JOB", zap.Error(err))

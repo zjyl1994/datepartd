@@ -1,4 +1,6 @@
-dryrun=true
+dryrun=false
+cron=false
+timezone="Asia/Shanghai"
 [[database]]
 name="TestDB"
 username="root"
